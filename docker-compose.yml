@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  lab7-api:
+    build:
+      context: ./lab7
+    container_name: lab7_api
+    ports:
+      - "8000:8000"
+
+  api-checker:
+    build:
+      context: .
+    depends_on:
+      - lab7-api
+    environment:
+      - API_BASE_URL=http://lab7-api:8000

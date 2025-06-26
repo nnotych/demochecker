@@ -1,0 +1,217 @@
+openapi: 3.0.4
+info:
+  title: Books API
+  version: 1.0.0
+  description: API for managing books with authentication and rate limiting
+servers:
+  - url: http://prism:4010
+    description: Prism mock server
+security:
+  - jwt: []
+paths:
+  /api/v1/:
+    get:
+      tags:
+        - books
+      summary: Welcome endpoint
+      responses:
+        '200':
+          description: Welcome message
+          content:
+            application/json:
+              example:
+                message: "Welcome to the Books API"
+                endpoints:
+                  GET /books: "Get all books"
+                  GET /books/<id>: "Get a specific book by ID"
+                  POST /books: "Add a new book"
+                  DELETE /books/<id>: "Delete a book by ID"
+                  POST /login: "Get access token"
+                  POST /token/refresh: "Refresh access token"
+                  POST /register: "Register a new user"
+  /api/v1/books:
+    get:
+      tags:
+        - books
+      summary: Get all books
+      responses:
+        '200':
+          description: List of books
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Book'
+    post:
+      tags:
+        - books
+      summary: Add a new book
+      security:
+        - jwt: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Book'
+      responses:
+        '201':
+          description: Book created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '401':
+          description: Unauthorized
+  /api/v1/books/{book_id}:
+    get:
+      tags:
+        - books
+      summary: Get a book by ID
+      parameters:
+        - name: book_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Book details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '404':
+          description: Book not found
+    delete:
+      tags:
+        - books
+      summary: Delete a book by ID
+      security:
+        - jwt: []
+      parameters:
+        - name: book_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Book deleted
+        '401':
+          description: Unauthorized
+        '404':
+          description: Book not found
+  /api/v1/register:
+    post:
+      tags:
+        - auth
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '200':
+          description: User registered
+          content:
+            application/json:
+              example:
+                status: "success"
+                message: "User 'testuser' successfully registered"
+                user_id: 1
+                username: "testuser"
+                next_steps: "You can now login using your credentials at /login endpoint"
+  /api/v1/login:
+    post:
+      tags:
+        - auth
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '200':
+          description: Authentication tokens
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        '401':
+          description: Invalid credentials
+  /api/v1/refresh:
+    post:
+      tags:
+        - auth
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+      responses:
+        '200':
+          description: New tokens
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        '400':
+          description: Token is required
+        '401':
+          description: Invalid token
+components:
+  securitySchemes:
+    jwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Book:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+          minLength: 3
+          maxLength: 30
+        author:
+          type: string
+          minLength: 3
+          maxLength: 30
+        year:
+          type: integer
+          minimum: 1000
+          maximum: 2025
+        genre:
+          type: string
+          minLength: 2
+          maxLength: 10
+    UserCreate:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 20
+        password:
+          type: string
+          minLength: 6
+    Token:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
